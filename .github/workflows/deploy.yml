@@ -38,8 +38,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          KAMAL_REGISTRY_USERNAME: op://Kamal/Voice/KAMAL_REGISTRY_USERNAME
-          KAMAL_REGISTRY_PASSWORD: op://Kamal/Voice/KAMAL_REGISTRY_PASSWORD
+          KAMAL_REGISTRY_USERNAME: op://Kamal/Github/KAMAL_REGISTRY_USERNAME
+          KAMAL_REGISTRY_PASSWORD: op://Kamal/Github/KAMAL_REGISTRY_PASSWORD
           SSH_PRIVATE_KEY: op://Kamal/Github/SSH_PRIVATE_KEY
           VOICE_PASSWORD: op://Kamal/Voice/VOICE_PASSWORD
 
