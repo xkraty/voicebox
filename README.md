@@ -42,16 +42,16 @@ in the `voice_models` volume.
    `config/deploy.production.yml`. Without a GPU, more CPUs means faster
    generation. The image plus models need about 10 GB of disk.
 
-3. **1Password.** Create a "Voice" item in the Kamal vault with
-   `KAMAL_REGISTRY_USERNAME`, `KAMAL_REGISTRY_PASSWORD` (a GHCR token with
-   `write:packages`) and `VOICE_PASSWORD` (the basic-auth password; the user
-   is `admin`, set in `config/deploy.yml`).
+3. **1Password** (Kamal vault). The registry credentials come from the shared
+   "Github" item (`KAMAL_REGISTRY_USERNAME`, `KAMAL_REGISTRY_PASSWORD`, a GHCR
+   token with `write:packages`). The "Voice" item holds `VOICE_PASSWORD`, the
+   basic-auth password. The user is `admin`, set in `config/deploy.yml`.
 
 4. **Create `.env.production`** (gitignored). It holds only `op://` references:
 
 ```
-KAMAL_REGISTRY_USERNAME=op://Kamal/Voice/KAMAL_REGISTRY_USERNAME
-KAMAL_REGISTRY_PASSWORD=op://Kamal/Voice/KAMAL_REGISTRY_PASSWORD
+KAMAL_REGISTRY_USERNAME=op://Kamal/Github/KAMAL_REGISTRY_USERNAME
+KAMAL_REGISTRY_PASSWORD=op://Kamal/Github/KAMAL_REGISTRY_PASSWORD
 VOICE_PASSWORD=op://Kamal/Voice/VOICE_PASSWORD
 ```
 
