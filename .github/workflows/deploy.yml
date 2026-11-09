@@ -1,0 +1,67 @@
+name: Deploy
+
+permissions:
+  packages: write
+  contents: read
+
+on:
+  release:
+    types: [published]
+  # No schedule: Voicebox is pinned (VOICEBOX_REF in the Dockerfile), so a
+  # rebuild only changes something when that pin moves.
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    # torch + every TTS engine: the first, uncached build is slow
+    timeout-minutes: 60
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    concurrency:
+      group: deploy_${{ github.event.inputs.environment || 'production' }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v5
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          KAMAL_REGISTRY_USERNAME: op://Kamal/Voice/KAMAL_REGISTRY_USERNAME
+          KAMAL_REGISTRY_PASSWORD: op://Kamal/Voice/KAMAL_REGISTRY_PASSWORD
+          SSH_PRIVATE_KEY: op://Kamal/Github/SSH_PRIVATE_KEY
+          VOICE_PASSWORD: op://Kamal/Voice/VOICE_PASSWORD
+
+      - uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ env.SSH_PRIVATE_KEY }}
+
+      - uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_GEMFILE: ./Gemfile
+        with:
+          ruby-version: mise.toml
+          bundler-cache: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Kamal Deploy
+        run: |
+          ./bin/kamal deploy -v --destination=${{ github.event.inputs.environment || 'production' }}
+
+      - name: Kamal Release
+        if: ${{ cancelled() || failure() }}
+        run: |
+          ./bin/kamal lock release --destination=${{ github.event.inputs.environment || 'production' }}

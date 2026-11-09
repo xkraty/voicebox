@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Container command: Voicebox on 127.0.0.1:17493, Caddy (basic auth) on :8080.
+# Runs as the voicebox user (the upstream entrypoint drops privileges first).
+# If either process exits, the other is stopped so the container exits and
+# Docker restarts it.
+set -euo pipefail
+
+: "${VOICE_USER:?VOICE_USER is not set}"
+: "${VOICE_PASSWORD:?VOICE_PASSWORD is not set}"
+
+# Caddy's basic_auth needs a bcrypt hash; derive it from the Kamal secret so
+# 1Password only ever stores the plain password.
+VOICE_PASSWORD_HASH="$(caddy hash-password --plaintext "$VOICE_PASSWORD")"
+export VOICE_PASSWORD_HASH
+unset VOICE_PASSWORD
+
+uvicorn backend.main:app --host 127.0.0.1 --port 17493 &
+voicebox_pid=$!
+caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
+caddy_pid=$!
+
+stop() { kill -TERM "$voicebox_pid" "$caddy_pid" 2>/dev/null || true; }
+trap stop TERM INT
+
+status=0
+wait -n "$voicebox_pid" "$caddy_pid" || status=$?
+stop
+wait || true
+exit "$status"

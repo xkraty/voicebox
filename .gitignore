@@ -1,0 +1,4 @@
+# Secrets: .env.production holds op:// references. Match every variant.
+.env
+.env.*
+!.env.example

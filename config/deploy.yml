@@ -1,0 +1,47 @@
+service: voice
+
+image: xkraty/voicebox
+
+servers:
+  web:
+
+proxy:
+  ssl: true
+  app_port: 8080 # Caddy (basic auth); Voicebox itself stays on 127.0.0.1:17493
+  # With TLS on, kamal-proxy drops X-Forwarded-* unless told otherwise
+  forward_headers: true
+  # CPU generation of long text can take minutes (default is 30s)
+  response_timeout: 600
+  buffering:
+    # Stream progress events and audio instead of holding the whole response
+    responses: false
+  healthcheck:
+    path: /up # answered by Caddy, no auth
+
+registry:
+  server: ghcr.io
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  clear:
+    VOICE_USER: admin
+    LOG_LEVEL: info
+  secret:
+    - VOICE_PASSWORD
+
+builder:
+  arch: amd64
+  # The torch + engines layers are big and slow; reuse them across builds
+  cache:
+    type: registry
+    image: xkraty/voicebox-build-cache
+    options: mode=max
+
+volumes:
+  # Profiles, DB, generated audio
+  - "voice_data:/app/data"
+  # Downloaded models (LuxTTS) survive redeploys
+  - "voice_models:/home/voicebox/.cache/huggingface"

@@ -1,0 +1,16 @@
+servers:
+  web:
+    hosts:
+      - voice.campoli.me
+    options:
+      # Shares thor (62 GB RAM, 20 threads) with campoli, paseo, ...: cap the
+      # TTS container at about half the box. CPU count drives generation speed.
+      memory: 16g
+      cpus: 10
+
+proxy:
+  host: voice.campoli.me
+
+env:
+  clear:
+    VOICEBOX_CORS_ORIGINS: https://voice.campoli.me

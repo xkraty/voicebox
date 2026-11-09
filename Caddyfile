@@ -1,0 +1,28 @@
+{
+	# kamal-proxy terminates TLS; Caddy only does auth + proxying on plain HTTP.
+	auto_https off
+	admin off
+	servers {
+		# Trust X-Forwarded-* from kamal-proxy (Docker network = private range)
+		trusted_proxies static private_ranges
+	}
+}
+
+:8080 {
+	# kamal-proxy health check: unauthenticated, answered by Caddy itself so a
+	# slow Voicebox start (model loading) never fails a deploy.
+	@health path /up
+	handle @health {
+		respond "OK" 200
+	}
+
+	handle {
+		basic_auth {
+			{$VOICE_USER} {$VOICE_PASSWORD_HASH}
+		}
+		reverse_proxy 127.0.0.1:17493 {
+			# Stream progress events / audio immediately
+			flush_interval -1
+		}
+	}
+}
